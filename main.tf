@@ -3,8 +3,8 @@
 module "vpc" {
     source  = "github.com/terraform-google-modules/terraform-google-network"
 
-    project_id   = "sap-poc-india"
-    network_name = "example-vpc"
+    project_id   = "jenkins-314106"
+    network_name = "jenkins-vpc"
     routing_mode = "GLOBAL"
 
     subnets = [
