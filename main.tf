@@ -1,43 +1,50 @@
-resource "google_service_account" "default" {
-  account_id   = "service_account_id"
-  display_name = "Service Account"
+provider "google" {
+  version = "~> 3.3.0"
 }
 
-resource "google_compute_instance" "default" {
-  name         = "test"
-  machine_type = "e2-medium"
-  zone         = "us-central1-a"
+provider "null" {
+  version = "~> 2.1"
+}
 
-  tags = ["foo", "bar"]
+locals {
+  subnet_01 = "${var.prefix}app-subnet-01"
+  subnet_02 = "${var.prefix}db-subnet-02"
 
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-9"
+}
+
+module "vpc-secondary-ranges" {
+  source       = "terraform-google-modules/network/google"
+  version      = "~> 2.0.0"
+  project_id   = var.project_id
+  network_name = "${var.prefix}vpc"
+
+  subnets = [
+    {
+      subnet_name           = "${local.subnet_01}"
+      subnet_ip             = "10.168.0.0/20"
+      subnet_region         = "us-east1"
+      subnet_private_access = "true"
+      subnet_flow_logs      = "true"
+    },
+    {
+      subnet_name           = "${local.subnet_02}"
+      subnet_ip             = "10.150.0.0/20"
+      subnet_region         = "us-east1"
+      subnet_private_access = "true"
+      subnet_flow_logs      = "true"
     }
-  }
+  ]
 
-  // Local SSD disk
-  scratch_disk {
-    interface = "SCSI"
-  }
-
-  network_interface {
-    network = "default"
-
-    access_config {
-      // Ephemeral IP
-    }
-  }
-
-  metadata = {
-    foo = "bar"
-  }
-
-  metadata_startup_script = "echo hi > /test.txt"
-
-  service_account {
-    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    email  = google_service_account.default.email
-    scopes = ["cloud-platform"]
+  secondary_ranges = {
+    "${local.subnet_01}" = [
+      {
+        range_name    = "${local.subnet_01}-pod"
+        ip_cidr_range = "10.48.0.0/14"
+      },
+      {
+        range_name    = "${local.subnet_01}-service"
+        ip_cidr_range = "10.52.0.0/20"
+      },
+    ]
   }
 }
