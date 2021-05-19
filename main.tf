@@ -1,10 +1,4 @@
-provider "google" {
-  version = "~> 3.3.0"
-}
 
-provider "null" {
-  version = "~> 2.1"
-}
 
 module "vpc" {
     source  = "github.com/terraform-google-modules/terraform-google-network"
